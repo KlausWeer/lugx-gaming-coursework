@@ -1,0 +1,47 @@
+# .github/workflows/game-service-ci.yaml
+
+# The name of our workflow. This will appear in the GitHub Actions tab.
+name: Build and Push Game Service
+
+# This section defines the trigger for the workflow.
+on:
+  # We trigger on any 'push' event (like git push)
+  push:
+    # But only for pushes to the 'main' branch
+    branches:
+      - main
+    # And ONLY if files inside the 'game-service/' directory were changed.
+    paths:
+      - 'game-service/**'
+
+# A workflow is made up of one or more 'jobs' that can run in parallel or sequence.
+jobs:
+  # We have one job named 'build-and-push'
+  build-and-push:
+    # This job will run on a fresh virtual machine hosted by GitHub (Ubuntu).
+    runs-on: ubuntu-latest
+
+    # The 'steps' are the individual commands the job will execute.
+    steps:
+    # Step 1: Check out our repository code so the workflow can access it.
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    # Step 2: Log in to Docker Hub using the secrets we created.
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    # Step 3: Build the Docker image and push it to Docker Hub.
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v4
+      with:
+        # The context is the directory containing the Dockerfile and source code.
+        context: ./game-service
+        # Push the image to the registry after building.
+        push: true
+        # The tags for the image. We'll create two: one with the latest tag,
+        # and one with the unique commit hash for versioning.
+        tags: binalweerasena/game-service:latest, binalweerasena/game-service:${{ github.sha }}
