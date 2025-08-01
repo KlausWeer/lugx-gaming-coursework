@@ -34,7 +34,7 @@ jobs:
       with:
         context: ./game_service
         push: true
-        tags: YOUR_DOCKERHUB_USERNAME/game_service:${{ steps.get_sha.outputs.sha }}
+        tags: binalweerasena/game_service:${{ steps.get_sha.outputs.sha }}
 
   # --- JOB 2: Deploy the new image to Kubernetes ---
   deploy:
@@ -43,7 +43,7 @@ jobs:
     needs: build-and-push
     steps:
     - name: Deploy to Kubernetes
-      run: echo "Deploying image YOUR_DOCKERHUB_USERNAME/game_service:${{ needs.build-and-push.outputs.image_tag }}..."
+      run: echo "Deploying image binalweerasena/game_service:${{ needs.build-and-push.outputs.image_tag }}..."
       # In a real cloud environment, this step would look like this:
       # - name: Set up Kubeconfig
       #   uses: azure/k8s-set-context@v3
