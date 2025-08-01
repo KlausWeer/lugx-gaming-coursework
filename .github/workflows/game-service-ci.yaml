@@ -12,7 +12,7 @@ on:
       - main
     # And ONLY if files inside the 'game-service/' directory were changed.
     paths:
-      - 'game-service/**'
+      - 'game_service/**'
 
 # A workflow is made up of one or more 'jobs' that can run in parallel or sequence.
 jobs:
@@ -39,9 +39,9 @@ jobs:
       uses: docker/build-push-action@v4
       with:
         # The context is the directory containing the Dockerfile and source code.
-        context: ./game-service
+        context: ./game_service
         # Push the image to the registry after building.
         push: true
         # The tags for the image. We'll create two: one with the latest tag,
         # and one with the unique commit hash for versioning.
-        tags: binalweerasena/game-service:latest, binalweerasena/game-service:${{ github.sha }}
+        tags: binalweerasena/game_service:latest, binalweerasena/game_service:${{ github.sha }}
