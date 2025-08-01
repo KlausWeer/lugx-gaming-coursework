@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: game-service-deployment
+spec:
+  replicas: 2 # Let's run 2 copies for scalability
+  selector:
+    matchLabels:
+      app: game-service
+  template:
+    metadata:
+      labels:
+        app: game-service
+    spec:
+      containers:
+      - name: game-service
+        image: game-service:v5 # Use the new image
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5001
+        env:
+        - name: DB_HOST
+          value: "postgres-db-service" # This is the crucial service discovery part!
+        - name: DB_NAME
+          value: "lugx_db"
+        - name: DB_USER
+          value: "user"
+        - name: DB_PASSWORD
+          valueFrom: # Get the password from our Secret
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_PASSWORD
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: game-service
+spec:
+  selector:
+    app: game-service
+  ports:
+    - protocol: TCP
+      port: 5001
+      targetPort: 5001

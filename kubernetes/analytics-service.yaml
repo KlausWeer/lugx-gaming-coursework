@@ -1,0 +1,39 @@
+# This is the configuration for the Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics-deployment # The name of our deployment
+spec:
+  replicas: 1 # We want to run 1 copy of our container for now
+  selector:
+    matchLabels:
+      app: analytics # This label connects the Deployment to its pods
+  template:
+    metadata:
+      labels:
+        app: analytics # Pods created by this deployment will have this label
+    spec:
+      containers:
+      - name: analytics-container
+        image: analytics-service:v2 # The Docker image we built
+        imagePullPolicy: IfNotPresent # IMPORTANT: Tells K8s to use the local image, not pull from the internet
+        ports:
+        - containerPort: 5003 # The port the app listens on inside the container
+        env: # Setting our environment variables
+        - name: CLICKHOUSE_HOST
+          value: "j37jfjnak1.asia-southeast1.gcp.clickhouse.cloud" 
+        - name: CLICKHOUSE_PASSWORD
+          value: "il~35XgxRh~J2" 
+---
+# This is the configuration for the Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: analytics-service # The name of our service
+spec:
+  selector:
+    app: analytics # This selector finds the pods managed by our deployment (it matches the label)
+  ports:
+    - protocol: TCP
+      port: 5003 # The port the Service will be available on inside the cluster
+      targetPort: 5003 # The port to forward traffic to on the container

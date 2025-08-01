@@ -1,0 +1,74 @@
+# 1. Secret to store the database password securely
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-secret
+type: Opaque
+stringData:
+  POSTGRES_PASSWORD: "lugxgaming" # You can change this password
+
+---
+# 2. PersistentVolumeClaim to request storage
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce # This volume can be mounted by a single node
+  resources:
+    requests:
+      storage: 1Gi # Request 1 Gigabyte of storage
+
+---
+# 3. Deployment to run the PostgreSQL container
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:14-alpine # Using the official PostgreSQL image
+        ports:
+        - containerPort: 5432 # Default PostgreSQL port
+        env:
+        - name: POSTGRES_DB
+          value: "lugx_db" # The name of the database to create
+        - name: POSTGRES_USER
+          value: "user"
+        - name: POSTGRES_PASSWORD
+          valueFrom: # Get the password from our Secret
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_PASSWORD
+        volumeMounts:
+        - name: postgres-storage # Mount the storage volume
+          mountPath: /var/lib/postgresql/data # This is the folder where PostgreSQL stores its data
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: postgres-pvc # Use the PVC we created
+
+---
+# 4. Service to provide a stable network address for the database
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-db-service # This name is how other pods will find the database
+spec:
+  selector:
+    app: postgres
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
