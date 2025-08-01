@@ -1,47 +1,79 @@
 # .github/workflows/game-service-ci.yaml
 
-# The name of our workflow. This will appear in the GitHub Actions tab.
-name: Build and Push Game Service
+name: CI/CD for Game Service
 
-# This section defines the trigger for the workflow.
 on:
-  # We trigger on any 'push' event (like git push)
   push:
-    # But only for pushes to the 'main' branch
     branches:
       - main
-    # And ONLY if files inside the 'game-service/' directory were changed.
     paths:
       - 'game_service/**'
 
-# A workflow is made up of one or more 'jobs' that can run in parallel or sequence.
 jobs:
-  # We have one job named 'build-and-push'
+  # --- JOB 1: Build and Push the Docker Image ---
   build-and-push:
-    # This job will run on a fresh virtual machine hosted by GitHub (Ubuntu).
     runs-on: ubuntu-latest
-
-    # The 'steps' are the individual commands the job will execute.
+    outputs:
+      image_tag: ${{ steps.get_sha.outputs.sha }}
     steps:
-    # Step 1: Check out our repository code so the workflow can access it.
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    # Step 2: Log in to Docker Hub using the secrets we created.
+    - name: Get commit SHA
+      id: get_sha
+      run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
     - name: Log in to Docker Hub
       uses: docker/login-action@v2
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    # Step 3: Build the Docker image and push it to Docker Hub.
     - name: Build and push Docker image
       uses: docker/build-push-action@v4
       with:
-        # The context is the directory containing the Dockerfile and source code.
         context: ./game_service
-        # Push the image to the registry after building.
         push: true
-        # The tags for the image. We'll create two: one with the latest tag,
-        # and one with the unique commit hash for versioning.
-        tags: binalweerasena/game_service:latest, binalweerasena/game_service:${{ github.sha }}
+        tags: YOUR_DOCKERHUB_USERNAME/game_service:${{ steps.get_sha.outputs.sha }}
+
+  # --- JOB 2: Deploy the new image to Kubernetes ---
+  deploy:
+    runs-on: ubuntu-latest
+    # This job depends on the 'build-and-push' job finishing successfully
+    needs: build-and-push
+    steps:
+    - name: Deploy to Kubernetes
+      run: echo "Deploying image YOUR_DOCKERHUB_USERNAME/game_service:${{ needs.build-and-push.outputs.image_tag }}..."
+      # In a real cloud environment, this step would look like this:
+      # - name: Set up Kubeconfig
+      #   uses: azure/k8s-set-context@v3
+      #   with:
+      #     method: kubeconfig
+      #     kubeconfig: ${{ secrets.KUBE_CONFIG }} # A secret containing the cluster credentials
+      #
+      # - name: Deploy new image
+      #   run: kubectl set image deployment/game-service-deployment game-service=YOUR_DOCKERHUB_USERNAME/game_service:${{ needs.build-and-push.outputs.image_tag }}
+
+  # --- JOB 3: Run Integration Tests After Deployment ---
+  test:
+    runs-on: ubuntu-latest
+    # This job depends on the 'deploy' job finishing successfully
+    needs: deploy
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      run: pip install pytest requests
+
+    - name: Run integration test against live service
+      run: echo "Testing http://your-live-service-url/api/games..."
+      # In a real environment, you would run:
+      # env:
+      #   SERVICE_URL: "http://your-live-service-url" # The public URL of your application
+      # run: python -m pytest game_service/
