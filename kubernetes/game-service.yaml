@@ -1,43 +1,78 @@
+# kubernetes/game-service.yaml
+
+# --- BLUE DEPLOYMENT (v5 - The current live version) ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: game-service-deployment
+  name: game-service-deployment-blue
 spec:
-  replicas: 2 # Let's run 2 copies for scalability
+  replicas: 2
   selector:
     matchLabels:
       app: game-service
+      version: blue
   template:
     metadata:
       labels:
         app: game-service
+        version: blue # This pod gets the 'blue' version label
     spec:
       containers:
       - name: game-service
-        image: game-service:v5 # Use the new image
+        image: game-service:v5 # Using our current, stable image
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 5001
         env:
         - name: DB_HOST
-          value: "postgres-db-service" # This is the crucial service discovery part!
+          value: "postgres-db-service"
         - name: DB_NAME
           value: "lugx_db"
         - name: DB_USER
           value: "user"
         - name: DB_PASSWORD
-          valueFrom: # Get the password from our Secret
+          valueFrom:
             secretKeyRef:
               name: postgres-secret
               key: POSTGRES_PASSWORD
+
 ---
+# --- GREEN DEPLOYMENT (v6 - The new version, initially not deployed) ---
+# We will create this deployment later to simulate an update.
+# For now, this is just a template for what we WILL deploy.
+# You can keep this commented out or in a separate file.
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: game-service-deployment-green
+# spec:
+#   replicas: 2
+#   selector:
+#     matchLabels:
+#       app: game-service
+#       version: green
+#   template:
+#     metadata:
+#       labels:
+#         app: game-service
+#         version: green # This pod gets the 'green' version label
+#     spec:
+#       containers:
+#       - name: game-service
+#         image: game-service:v6 # A new image version we will create
+#         # ... (rest of the spec is identical) ...
+
+---
+# --- The Single Service acting as the Router ---
 apiVersion: v1
 kind: Service
 metadata:
   name: game-service
 spec:
   selector:
+    # IMPORTANT: The service now selects based on app AND version
     app: game-service
+    version: blue # Initially, it points to the BLUE environment
   ports:
     - protocol: TCP
       port: 5001

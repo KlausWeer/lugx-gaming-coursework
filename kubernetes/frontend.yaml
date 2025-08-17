@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: lugx-frontend
-        image: lugx-frontend:v1 # We will build this image next
+        image: lugx-frontend:v3 
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80 # NGINX listens on port 80 by default

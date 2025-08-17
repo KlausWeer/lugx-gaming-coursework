@@ -7,6 +7,7 @@ spec:
   rules:
   - http:
       paths:
+      # Rule for the game-service
       - path: /api/games
         pathType: Prefix
         backend:
@@ -14,6 +15,26 @@ spec:
             name: game-service
             port:
               number: 5001
+
+      # Rule for the order-service
+      - path: /api/orders
+        pathType: Prefix
+        backend:
+          service:
+            name: order-service
+            port:
+              number: 5002
+     
+      # Rule for the analytics-service
+      - path: /api/track
+        pathType: Prefix
+        backend:
+          service:
+            name: analytics-service
+            port:
+              number: 5003
+
+      # Rule for the frontend
       - path: /
         pathType: Prefix
         backend:

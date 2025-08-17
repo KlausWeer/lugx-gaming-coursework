@@ -1,27 +1,26 @@
-# 1. Secret to store the database password securely
+
 apiVersion: v1
 kind: Secret
 metadata:
   name: postgres-secret
 type: Opaque
 stringData:
-  POSTGRES_PASSWORD: "lugxgaming" # You can change this password
+  POSTGRES_PASSWORD: "lugxgaming" 
 
 ---
-# 2. PersistentVolumeClaim to request storage
+# PersistentVolumeClaim to request storage
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: postgres-pvc
 spec:
   accessModes:
-    - ReadWriteOnce # This volume can be mounted by a single node
+    - ReadWriteOnce 
   resources:
     requests:
-      storage: 1Gi # Request 1 Gigabyte of storage
-
+      storage: 1Gi 
 ---
-# 3. Deployment to run the PostgreSQL container
+#deployment to run the container
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -38,33 +37,33 @@ spec:
     spec:
       containers:
       - name: postgres
-        image: postgres:14-alpine # Using the official PostgreSQL image
+        image: postgres:14-alpine 
         ports:
-        - containerPort: 5432 # Default PostgreSQL port
+        - containerPort: 5432 
         env:
         - name: POSTGRES_DB
-          value: "lugx_db" # The name of the database to create
+          value: "lugx_db" 
         - name: POSTGRES_USER
           value: "user"
         - name: POSTGRES_PASSWORD
-          valueFrom: # Get the password from our Secret
+          valueFrom: 
             secretKeyRef:
               name: postgres-secret
               key: POSTGRES_PASSWORD
         volumeMounts:
-        - name: postgres-storage # Mount the storage volume
-          mountPath: /var/lib/postgresql/data # This is the folder where PostgreSQL stores its data
+        - name: postgres-storage 
+          mountPath: /var/lib/postgresql/data 
       volumes:
       - name: postgres-storage
         persistentVolumeClaim:
-          claimName: postgres-pvc # Use the PVC we created
+          claimName: postgres-pvc 
 
 ---
-# 4. Service to provide a stable network address for the database
+# a stable network address for the database
 apiVersion: v1
 kind: Service
 metadata:
-  name: postgres-db-service # This name is how other pods will find the database
+  name: postgres-db-service 
 spec:
   selector:
     app: postgres

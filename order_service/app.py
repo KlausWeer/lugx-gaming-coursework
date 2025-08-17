@@ -4,17 +4,6 @@ from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 
-# --- Database Schema ---
-# You'll need to create the 'orders' table in your database.
-# SQL to run in the database pod:
-# CREATE TABLE orders (
-#     id SERIAL PRIMARY KEY,
-#     cart_items JSONB,
-#     total_price NUMERIC(10, 2) NOT NULL,
-#     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-# );
-# -----------------------
-
 def get_db_connection():
     """Establishes a connection to the database using environment variables."""
     conn = psycopg2.connect(
@@ -30,7 +19,7 @@ def index():
     """A simple endpoint to confirm the service is running."""
     return "<h1>Order Service is running!</h1>"
 
-@app.route('/orders', methods=['POST'])
+@app.route('/api/orders', methods=['POST'])
 def create_order():
     """Creates a new order and saves it to the database."""
     # Get the order data from the request body
